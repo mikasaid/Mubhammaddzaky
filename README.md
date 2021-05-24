@@ -1,30 +1,135 @@
-Programming StyleThe website exhibits "good" programming style, although definitely not the only way to do things.
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
-Some of the programming design decisions reflected:
+/*
+| -------------------------------------------------------------------
+| AUTO-LOADER
+| -------------------------------------------------------------------
+| This file specifies which systems should be loaded by default.
+|
+| In order to keep the framework as light-weight as possible only the
+| absolute minimal resources are loaded by default. For example,
+| the database is not connected to automatically since no assumption
+| is made regarding whether you intend to use it.  This file lets
+| you globally define which systems you would like loaded with every
+| request.
+|
+| -------------------------------------------------------------------
+| Instructions
+| -------------------------------------------------------------------
+|
+| These are the things you can load automatically:
+|
+| 1. Packages
+| 2. Libraries
+| 3. Drivers
+| 4. Helper files
+| 5. Custom config files
+| 6. Language files
+| 7. Models
+|
+*/
 
-The architecture adheres more to the "model-view-adapter" convention, where the view is unaware of the source of data and the model is unaware of how any data might be presented. The controllers are go-betweens.
-A "master template" lets each controller focus only with building its part of a webpage.
-A base controller takes care of assembling finished pages, using the master template.
-Using the template parser eliminates PHP code from the views, where possible.
-Mock data for the recent news and most recently active threads, means that the website can be tested locally, without needing access to the live forum database.
-View fragments are used to style single "records" on their own, improving cohesion.
-The CodeIgniter4 project folder is assumed to be at the same level as this project folder, and managed independently.
-An ".htaccess" file is incorporated, to configure Apache to remove index.php from any URLs.
-Sitemap
-The site has a simple structure ... basically two-level (homepage and then content pages). There are a couple of additional pages, for related but subordinate information, accessible from the footer navbar.
-Appropriate comments are found in each of the controllers
-Project Folders
-/application	the obvious
-/data	zipped files for downloading, avatars
-/public	the served face of the website
-/public/assets CSS, javascript & media /public/user_guide Symbolic link to the current CI user guide (v3) /public/userguide2 Placeholder for the CI2 user guide /public/userguide3 Placeholder for the CI3 user guide /tests Provision for unit testing (not used) /writable Writable folder for temporary files
-You may have noticed that there is no system folder. That is on purpose ... the website assumes that the CodeIgniter4 framework has been installed locally at the same level as the website project.
-License
-Please see the license agreement
-Resources
-User Guide
-Community Forums
-Community IRCAcknowledgement
-The CodeIgniter Project would like to thank the Reactor Engineers, EllisLab, all the contributors to the CodeIgniter project, and you, the CodeIgniter user.
+/*
+| -------------------------------------------------------------------
+|  Auto-load Packages
+| -------------------------------------------------------------------
+| Prototype:
+|
+|  $autoload['packages'] = array(APPPATH.'third_party', '/usr/local/shared');
+|
+*/
+$autoload['packages'] = array();
 
-This repository is maintained by James Parry, Project Lead.
+/*
+| -------------------------------------------------------------------
+|  Auto-load Libraries
+| -------------------------------------------------------------------
+| These are the classes located in system/libraries/ or your
+| application/libraries/ directory, with the addition of the
+| 'database' library, which is somewhat of a special case.
+|
+| Prototype:
+|
+|	$autoload['libraries'] = array('database', 'email', 'session');
+|
+| You can also supply an alternative library name to be assigned
+| in the controller:
+|
+|	$autoload['libraries'] = array('user_agent' => 'ua');
+*/
+$autoload['libraries'] = array('database','session');
+
+/*
+| -------------------------------------------------------------------
+|  Auto-load Drivers
+| -------------------------------------------------------------------
+| These classes are located in system/libraries/ or in your
+| application/libraries/ directory, but are also placed inside their
+| own subdirectory and they extend the CI_Driver_Library class. They
+| offer multiple interchangeable driver options.
+|
+| Prototype:
+|
+|	$autoload['drivers'] = array('cache');
+|
+| You can also supply an alternative property name to be assigned in
+| the controller:
+|
+|	$autoload['drivers'] = array('cache' => 'cch');
+|
+*/
+$autoload['drivers'] = array();
+
+/*
+| -------------------------------------------------------------------
+|  Auto-load Helper Files
+| -------------------------------------------------------------------
+| Prototype:
+|
+|	$autoload['helper'] = array('url', 'file');
+*/
+$autoload['helper'] = array('url');
+
+/*
+| -------------------------------------------------------------------
+|  Auto-load Config files
+| -------------------------------------------------------------------
+| Prototype:
+|
+|	$autoload['config'] = array('config1', 'config2');
+|
+| NOTE: This item is intended for use ONLY if you have created custom
+| config files.  Otherwise, leave it blank.
+|
+*/
+$autoload['config'] = array();
+
+/*
+| -------------------------------------------------------------------
+|  Auto-load Language files
+| -------------------------------------------------------------------
+| Prototype:
+|
+|	$autoload['language'] = array('lang1', 'lang2');
+|
+| NOTE: Do not include the "_lang" part of your file.  For example
+| "codeigniter_lang.php" would be referenced as array('codeigniter');
+|
+*/
+$autoload['language'] = array();
+
+/*
+| -------------------------------------------------------------------
+|  Auto-load Models
+| -------------------------------------------------------------------
+| Prototype:
+|
+|	$autoload['model'] = array('first_model', 'second_model');
+|
+| You can also supply an alternative model name to be assigned
+| in the controller:
+|
+|	$autoload['model'] = array('first_model' => 'first');
+*/
+$autoload['model'] = array();
