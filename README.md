@@ -1,539 +1,677 @@
-:octocat: Hi there! Thanks for visiting!
-This is my personal configuration for my favorite openbox window manager and some applications too.I hope you understand everything here. 😉
-Here are some details about my setup
+avaPoet
+JavaPoet is a Java API for generating .java source files.
 
-Window Manager • Openbox 🎨 4 changable mode!
-Shell • Zsh 🐚 with oh my zsh framework! optional
-Terminal • URxvt, Termite available
-Openbox Menu • OBmenu-generator
-Panel • Tint2 🍧 material icon font!
-Compositor • Picom 🍩 rounded corners!
-Notify Daemon • Dunst 🍃 minimalism!
-Application Launcher • Rofi 🚀 blazing fast!
-File Manager • Thunar 🔖 customized sidebar & icon!
-Music Player • Mpd + Ncmpcpp, Spotify 🎑 riced!
-GUI & CLI IDE/Text Editor • Geany, Neovim
-🎁 Changelogs
-normal
-v3.0
-v3.1
-v3.2 latest
-🌸 Setup
-This is step-by-step how to install these .files for automatic setup OpenboxWM custom environment.
+Source file generation can be useful when doing things such as annotation processing or interacting with metadata files (e.g., database schemas, protocol formats). By generating code, you eliminate the need to write boilerplate while also keeping a single source of truth for the metadata.
 
-Introduction of Linux Rice
-Please read this and/or this.
-Installation (dependencies)
-Customize your choice about dependencies below, this is my complete setup as I use single OS, single OpenboxWM with my preference utility application. In fact, what is in the column is a minimal recommendation.
+Example
+Here's a (boring) HelloWorld class:
 
-Detailed environment
-Please refer to wiki/Detailed-Environment.
+package com.example.helloworld;
 
-Warning!
-This configuration is highly dependent to bash, sed, and coreutils.
-Assume that you are using sudo or doas. Installation feels like LFS? 😆
+public final class HelloWorld {
+  public static void main(String[] args) {
+    System.out.println("Hello, JavaPoet!");
+  }
+}
+And this is the (exciting) code to generate it with JavaPoet:
 
-Attention!
+MethodSpec main = MethodSpec.methodBuilder("main")
+    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    .returns(void.class)
+    .addParameter(String[].class, "args")
+    .addStatement("$T.out.println($S)", System.class, "Hello, JavaPoet!")
+    .build();
 
-Rofi must be above version 1.6.x, so for Debian-based you may need to compile manually from source. - issue
-If your Linux distribution repository only contains pure rxvt-unicode without patch for wide unicode and others, an example is on Arch Linux which provides pure rxvt-unicode and rxvt-unicode-patched version in the AUR repository. The problem is that the urxvt in the AUR hasn't been updated yet, and the link for the urxvt source-code for that version has been removed from the original link. Therefore, use rxvt-unicode from the main repo of each linux distribution that you use. Debian is different (already patched). - issue
-You may want to use polkit-gnome instead of lxsession / lxpolkit. Because, currently the lxsession in Gentoo/Linux is really bad (dependency hell).
-Debian & Ubuntu (and all based distributions)
-sudo apt install rsync python psmisc x11-utils imagemagick ffmpeg wireless-tools openbox pulseaudio
-alsa-utils brightnessctl nitrogen dunst tint2 gsimplecal rofi qt5-style-plugins lxpolkit xautolock
-rxvt-unicode xclip scrot thunar thunar-archive-plugin thunar-volman ffmpegthumbnailer tumbler
-viewnior mpv mpd mpc ncmpcpp pavucontrol parcellite neofetch w3m w3m-img htop playerctl xsettingsd
-oh-my-zsh & plugins optional
-picom
-obmenu-generator
+TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+    .addMethod(main)
+    .build();
 
-Arch Linux (and all based distributions)
-Make sure your AUR Helper is yay or paru.
+JavaFile javaFile = JavaFile.builder("com.example.helloworld", helloWorld)
+    .build();
 
-yay -S rsync python psmisc xorg-xprop xorg-xwininfo imagemagick ffmpeg wireless_tools openbox 
+javaFile.writeTo(System.out);
+To declare the main method, we've created a MethodSpec "main" configured with modifiers, return type, parameters and code statements. We add the main method to a HelloWorld class, and then add that to a HelloWorld.java file.
 
-pulseaudio pulseaudio-alsa alsa-utils brightnessctl nitrogen dunst tint2 gsimplecal rofi 
+In this case we write the file to System.out, but we could also get it as a string (JavaFile.toString()) or write it to the file system (JavaFile.writeTo()).
 
-qt5-styleplugins lxsession xautolock rxvt-unicode-patched xclip scrot thunar thunar-archive-plugin 
+The Javadoc catalogs the complete JavaPoet API, which we explore below.
 
-thunar-volman ffmpegthumbnailer tumbler viewnior mpv mpd mpc ncmpcpp pavucontrol parcellite 
+Code & Control Flow
+Most of JavaPoet's API uses plain old immutable Java objects. There's also builders, method chaining and varargs to make the API friendly. JavaPoet offers models for classes & interfaces (TypeSpec), fields (FieldSpec), methods & constructors (MethodSpec), parameters (ParameterSpec) and annotations (AnnotationSpec).
 
-neofetch w3m htop picom-git obmenu-generator gtk2-perl playerctl xsettingsd
-oh-my-zsh & plugins optional
+But the body of methods and constructors is not modeled. There's no expression class, no statement class or syntax tree nodes. Instead, JavaPoet uses strings for code blocks:
 
-Another Linux Distribution
+MethodSpec main = MethodSpec.methodBuilder("main")
+    .addCode(""
+        + "int total = 0;\n"
+        + "for (int i = 0; i < 10; i++) {\n"
+        + "  total += i;\n"
+        + "}\n")
+    .build();
+Which generates this:
 
-Optional: betterdiscord, geany + geany plugins, gimp, nano + nano syntax highlighting, neovim, spotify, termite, xfce4-power-manager.
+void main() {
+  int total = 0;
+  for (int i = 0; i < 10; i++) {
+    total += i;
+  }
+}
+The manual semicolons, line wrapping, and indentation are tedious and so JavaPoet offers APIs to make it easier. There's addStatement() which takes care of semicolons and newline, and beginControlFlow() + endControlFlow() which are used together for braces, newlines, and indentation:
 
-Installation (dotfiles)
-Are all directories required? 🤔
-Please refer to wiki/Detailed-Environment.
+MethodSpec main = MethodSpec.methodBuilder("main")
+    .addStatement("int total = 0")
+    .beginControlFlow("for (int i = 0; i < 10; i++)")
+    .addStatement("total += i")
+    .endControlFlow()
+    .build();
+This example is lame because the generated code is constant! Suppose instead of just adding 0 to 10, we want to make the operation and range configurable. Here's a method that generates a method:
 
-Most of .files
-You can clone or download as a archive. After that put all files in the dotfiles folder to user's home directory.
+private MethodSpec computeRange(String name, int from, int to, String op) {
+  return MethodSpec.methodBuilder(name)
+      .returns(int.class)
+      .addStatement("int result = 1")
+      .beginControlFlow("for (int i = " + from + "; i < " + to + "; i++)")
+      .addStatement("result = result " + op + " i")
+      .endControlFlow()
+      .addStatement("return result")
+      .build();
+}
+And here's what we get when we call computeRange("multiply10to20", 10, 20, "*"):
 
-Assume you are cloning in the /Documents directory for example.
+int multiply10to20() {
+  int result = 1;
+  for (int i = 10; i < 20; i++) {
+    result = result * i;
+  }
+  return result;
+}
+Methods generating methods! And since JavaPoet generates source instead of bytecode, you can read through it to make sure it's right.
 
-cd /Documents/ && git clone https://github.com/owl4ce/dotfiles.git
-I recommend with rsync.
+Some control flow statements, such as if/else, can have unlimited control flow possibilities. You can handle those options using nextControlFlow():
 
-rsync -avxHAXP --exclude '.git*' --exclude 'LICENSE' --exclude '*.md' dotfiles/ ~/
-Explanation
+MethodSpec main = MethodSpec.methodBuilder("main")
+    .addStatement("long now = $T.currentTimeMillis()", System.class)
+    .beginControlFlow("if ($T.currentTimeMillis() < now)", System.class)
+    .addStatement("$T.out.println($S)", System.class, "Time travelling, woo hoo!")
+    .nextControlFlow("else if ($T.currentTimeMillis() == now)", System.class)
+    .addStatement("$T.out.println($S)", System.class, "Time stood still!")
+    .nextControlFlow("else")
+    .addStatement("$T.out.println($S)", System.class, "Ok, time still moving forward")
+    .endControlFlow()
+    .build();
+Which generates:
 
-Options	Function
--a	all files, with permissions, etc..
--v	verbose, mention files
--x	stay on one file system
--H	preserve hard links (not included with -a)
--A	preserve ACLs/permissions (not included with -a)
--X	preserve extended attributes (not included with -a)
--P	show progress
---exclude	exclude files matching PATTERN
-Differences
+void main() {
+  long now = System.currentTimeMillis();
+  if (System.currentTimeMillis() < now)  {
+    System.out.println("Time travelling, woo hoo!");
+  } else if (System.currentTimeMillis() == now) {
+    System.out.println("Time stood still!");
+  } else {
+    System.out.println("Ok, time still moving forward");
+  }
+}
+Catching exceptions using try/catch is also a use case for nextControlFlow():
 
-cp is for duplicating stuff and by default only ensures files have unique full path names.
-rsync is for synchronising stuff and uses the size and timestamp of files to decide if they should be replaced. It has many more options and capabilities than cp.
-I recommend to not deleting dotfiles folder after cloning from this repository, because to make upgrades easier. Read the update section.
+MethodSpec main = MethodSpec.methodBuilder("main")
+    .beginControlFlow("try")
+    .addStatement("throw new Exception($S)", "Failed")
+    .nextControlFlow("catch ($T e)", Exception.class)
+    .addStatement("throw new $T(e)", RuntimeException.class)
+    .endControlFlow()
+    .build();
+Which produces:
 
-Icons
-Note
-pushd is same as cd, but can return back to the first directory (checkpoint).
+void main() {
+  try {
+    throw new Exception("Failed");
+  } catch (Exception e) {
+    throw new RuntimeException(e);
+  }
+}
+$L for Literals
+The string-concatenation in calls to beginControlFlow() and addStatement is distracting. Too many operators. To address this, JavaPoet offers a syntax inspired-by but incompatible-with String.format(). It accepts $L to emit a literal value in the output. This works just like Formatter's %s:
 
-pushd ~/.icons/ &&
-    tar -Jxvf Papirus-Custom.tar.xz && tar -Jxvf Papirus-Dark-Custom.tar.xz &&
-    sudo ln -vs ~/.icons/Papirus-Custom /usr/share/icons/Papirus-Custom &&
-    sudo ln -vs ~/.icons/Papirus-Dark-Custom /usr/share/icons/Papirus-Dark-Custom &&
-popd
-Why I need to link icons to user system resources? 🤔
-That's needed by dunst in order to display most of icon from notification that spawned by application.
+private MethodSpec computeRange(String name, int from, int to, String op) {
+  return MethodSpec.methodBuilder(name)
+      .returns(int.class)
+      .addStatement("int result = 0")
+      .beginControlFlow("for (int i = $L; i < $L; i++)", from, to)
+      .addStatement("result = result $L i", op)
+      .endControlFlow()
+      .addStatement("return result")
+      .build();
+}
+Literals are emitted directly to the output code with no escaping. Arguments for literals may be strings, primitives, and a few JavaPoet types described below.
 
-Refresh Font Cache
-fc-cache -rv
-Root Privileges with SUID
-brightnessctl
-others if needed
-For brightnessctl, I recommend adding users to video group.
+$S for Strings
+When emitting code that includes string literals, we can use $S to emit a string, complete with wrapping quotation marks and escaping. Here's a program that emits 3 methods, each of which returns its own name:
 
-sudo chmod u+s $(command -v brightnessctl)
-The step you are waiting for
-The final step is login into openbox-session, basically login from display manager you use such as lightdm, gdm, etc.
+public static void main(String[] args) throws Exception {
+  TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+      .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+      .addMethod(whatsMyName("slimShady"))
+      .addMethod(whatsMyName("eminem"))
+      .addMethod(whatsMyName("marshallMathers"))
+      .build();
 
-Note
-Make sure the sh symlinks to bash, as it's very dependent on bash.
+  JavaFile javaFile = JavaFile.builder("com.example.helloworld", helloWorld)
+      .build();
 
-[ "$(readlink /bin/sh)" != "bash" ] && sudo ln -vfs bash /bin/sh
-If you are using ~/.xinitrc without display manager, simply add
+  javaFile.writeTo(System.out);
+}
 
-Systemd Linux Distribution
+private static MethodSpec whatsMyName(String name) {
+  return MethodSpec.methodBuilder(name)
+      .returns(String.class)
+      .addStatement("return $S", name)
+      .build();
+}
+In this case, using $S gives us quotation marks:
 
-exec openbox-session
-Init-Freedom Linux Distribution
+public final class HelloWorld {
+  String slimShady() {
+    return "slimShady";
+  }
 
-exec dbus-launch --exit-with-session openbox-session
-Then you can proceed to user's configuration. Explore!
+  String eminem() {
+    return "eminem";
+  }
 
-Additional
-Suggested replacement commands
+  String marshallMathers() {
+    return "marshallMathers";
+  }
+}
+$T for Types
+We Java programmers love our types: they make our code easier to understand. And JavaPoet is on board. It has rich built-in support for types, including automatic generation of import statements. Just use $T to reference types:
 
-ls ➜ exa
-~/.zshrc
+MethodSpec today = MethodSpec.methodBuilder("today")
+    .returns(Date.class)
+    .addStatement("return new $T()", Date.class)
+    .build();
+
+TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+    .addMethod(today)
+    .build();
+
+JavaFile javaFile = JavaFile.builder("com.example.helloworld", helloWorld)
+    .build();
+
+javaFile.writeTo(System.out);
+That generates the following .java file, complete with the necessary import:
+
+package com.example.helloworld;
+
+import java.util.Date;
+
+public final class HelloWorld {
+  Date today() {
+    return new Date();
+  }
+}
+We passed Date.class to reference a class that just-so-happens to be available when we're generating code. This doesn't need to be the case. Here's a similar example, but this one references a class that doesn't exist (yet):
+
+ClassName hoverboard = ClassName.get("com.mattel", "Hoverboard");
+
+MethodSpec today = MethodSpec.methodBuilder("tomorrow")
+    .returns(hoverboard)
+    .addStatement("return new $T()", hoverboard)
+    .build();
+And that not-yet-existent class is imported as well:
+
+package com.example.helloworld;
+
+import com.mattel.Hoverboard;
+
+public final class HelloWorld {
+  Hoverboard tomorrow() {
+    return new Hoverboard();
+  }
+}
+The ClassName type is very important, and you'll need it frequently when you're using JavaPoet. It can identify any declared class. Declared types are just the beginning of Java's rich type system: we also have arrays, parameterized types, wildcard types, and type variables. JavaPoet has classes for building each of these:
+
+ClassName hoverboard = ClassName.get("com.mattel", "Hoverboard");
+ClassName list = ClassName.get("java.util", "List");
+ClassName arrayList = ClassName.get("java.util", "ArrayList");
+TypeName listOfHoverboards = ParameterizedTypeName.get(list, hoverboard);
+
+MethodSpec beyond = MethodSpec.methodBuilder("beyond")
+    .returns(listOfHoverboards)
+    .addStatement("$T result = new $T<>()", listOfHoverboards, arrayList)
+    .addStatement("result.add(new $T())", hoverboard)
+    .addStatement("result.add(new $T())", hoverboard)
+    .addStatement("result.add(new $T())", hoverboard)
+    .addStatement("return result")
+    .build();
+JavaPoet will decompose each type and import its components where possible.
+
+package com.example.helloworld;
+
+import com.mattel.Hoverboard;
+import java.util.ArrayList;
+import java.util.List;
+
+public final class HelloWorld {
+  List<Hoverboard> beyond() {
+    List<Hoverboard> result = new ArrayList<>();
+    result.add(new Hoverboard());
+    result.add(new Hoverboard());
+    result.add(new Hoverboard());
+    return result;
+  }
+}
+Import static
+JavaPoet supports import static. It does it via explicitly collecting type member names. Let's enhance the previous example with some static sugar:
 
 ...
-134 alias ls="exa -lgh --icons --group-directories-first"
-135 alias la="exa -lgha --icons --group-directories-first"
-
-...
-
-cat ➜ bat
-Suggestion for tiling users
-
-
-
-I recommend compiling it from source. Then put zentile binary your PATH, for example in ~/.local/bin/
-
-<div class="highlight highlight-source-shell position-relative" data-snippet-clipboard-copy-content="# To run in the background (detached)
-zentile &!
-To kill (or pkill)
-killall zentile
-" style="box-sizing: border-box; position: relative !important; margin-bottom: 16px; color: rgb(201, 209, 217); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(13, 17, 23); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">
-
-# To run in the background (detached)
-
-zentile &!
-
-# To kill (or pkill)
-
-killall zentile
-
-Update
-Since I recommend using rsync from start, the easiest way is to list the files that will not be updated to avoid changing personal files with files in this repository. First, update local repository with git repository.
-
-Remember where you cloned this repository.
-For example, from the start we assumed that it was in /Documents.
-
-cd /Documents/ &&
-
-pushd dotfiles/ && git pull && popd
-Then list the files excluded by rsync (PATTERN). For example,
-/Documents/owl4ce_drsyncexc
-
-.git*
-
-LICENSE
-
-*.md
-
-*.joy
-
-BetterDiscord
-
-geany
-
-GIMP
-
-gtk-3.0
-
-config.conf
-
-nvim
-
-autostart
-
-environment
-
-tray
-
-shared
-
-sidebar
-
-termite
-
-Thunar
-
-xfconf
-
-.fonts
-
-.nothing
-
-.mpd
-
-.gtkrc-2.0
-
-.zshrc
-
-.nanorc
-
-.Xresources
-
-.xsettingsd
-Use find command to check PATTERN,
-
-find dotfiles/ -iname 'PATTERN'
-and whatever the file is. Next, of course is rsync.
-
-rsync -avxHAXP --exclude-from /Documents/owl4ce_drsyncexc dotfiles/ /
-User's configuration
-SLiM Themes optional
-
-See
-Chromium-based Web Browser suggested
-
-See
-Spotify - Spicetify Theme suggested
-
-See
-Telegram Desktop suggested
-
-See
-Capitaine Cursors Theme suggested
-
-See
-Touchpad tap-to-click (libinput) optional
-/etc/X11/xorg.conf.d/30-touchpad.conf
-
-Section "InputClass"
-
-Identifier "touchpad"
-
-Driver "libinput"
-
-MatchIsTouchpad "on"
-
-Option "Tapping" "on"
-
-Option "TappingButtonMap" "lmr"
-
-EndSection
-More information.
-
-User's Preferences required
-/.owl4ce_var
-Manage all your settings there. I hope all comments there are easy to understand. ^^
-
-User's Tray Icons
-/.config/openbox/tray
-An example is turning on nm-applet, because by default I don't use it and use networkmanager_dmenu instead.
-
-How about battery indicator?
-Because on the tint2 panel I turned off battery status. Alternatively, install xfce4-power-manager and enable system tray icon in xfce4-power-manager-settings.
-
-Remove hashtags for all your needs, then relogin openbox-session.
-
-Warning! Putting a tray here means that when switching Visual Mode, the program will be restarted.
-
-1 #
-
-2 # This tray will restart after switching modes
-
-3 # Please add "&" after command
-
-4 #
-
-5 # ---
-
-6
-
-7 parcellite &
-
-8 #nm-applet &
-
-9 #xfce4-power-manager &
-Available Default Apps
-/.scripts/default-apps/list
-
-Terminal: urxvt termite
-Lockscreen: anything
-Music Player: mpd spotify
-File Manager: anything
-1 terminal="urxvt"
-
-2 lockscreen="slimlock"
-
-3 musicpl="mpd"
-
-4 filemanager="thunar"
-Neovim
-/.config/nvim/
-You know what to do with Vim-plug.
-
-MPD Music Directory
-/.mpd/mpd.conf
-
-<div class="highlight highlight-source-haproxy-config position-relative" data-snippet-clipboard-copy-content="...
-6 music_directory "~/Music"
-
-...
-" style="box-sizing: border-box; position: relative !important; margin-bottom: 16px;">
-
-...
-
-6 music_directory     "~/Music"
-
-
-...
-
-Ncmpcpp Music Directory
-Auto connect with MPD.
-
-How to use ncmpcpp albumart? (URxvt)
-It's easy, put album|cover|folder|artwork|front.jp?g|png|gif|bmp into folder with song album. Recommended image size is 500px ( 1:1 ) or more. See keybinds
-
-Audio Server optional
-/.config/openbox/autostart
-
-This is optional for Linux distributions that don't use systemd as their init, actually pulseaudio can be triggered from increasing-decreasing audio volume.
-QT Themer (env var) optional
-/.config/openbox/environment
-This is optional if you're having issues like blind text with background from Mechanical Theme (Fleon GTK), as it basically uses plugins (QT5 to GTK2). Remove gtk2 after the equal sign, then relogin openbox-session.
-
-<div class="highlight highlight-source-haproxy-config position-relative" data-snippet-clipboard-copy-content="...
-7 # Use qt5-styleplugins for QT Themes
-8 export QT_QPA_PLATFORMTHEME=gtk2
-
-...
-" style="box-sizing: border-box; position: relative !important; margin-bottom: 16px;">
-
-...
-
-7 # Use qt5-styleplugins for QT Themes
-
-8 export QT_QPA_PLATFORMTHEME=gtk2
-
-
-...
-
-Neofetch Image
-~/.config/neofetch/config.conf
-
-<div class="highlight highlight-source-haproxy-config position-relative" data-snippet-clipboard-copy-content="...
-641 # Image Source
-642 #
-643 # Which image or ascii file to display.
-644 #
-645 # Default: 'auto'
-646 # Values: 'auto', 'ascii', 'wallpaper', '/path/to/img', '/path/to/ascii', '/path/to/dir/'
-647 # 'command output (neofetch --ascii "$(fortune | cowsay -W 30)")'
-648 # Flag: --source
-649 #
-650 # NOTE: 'auto' will pick the best image source for whatever image backend is used.
-651 # In ascii mode, distro ascii art will be used and in an image mode, your
-652 # wallpaper will be used.
-653 #image_source="auto"
-654 #image_source="${HOME}/.config/neofetch/images/arch.png"
-655 #image_source="${HOME}/.config/neofetch/images/arch_dark.png"
-656 #image_source="${HOME}/.config/neofetch/images/artix.png"
-657 #image_source="${HOME}/.config/neofetch/images/bedrock.png"
-658 #image_source="${HOME}/.config/neofetch/images/gentoo.png"
-659 #image_source="${HOME}/.config/neofetch/images/gentoo_dark.png"
-660 #image_source="${HOME}/.config/neofetch/images/lofi.png"
-661 image_source="${HOME}/.config/neofetch/images/sakura.png"
-662 #image_source="${HOME}/.config/neofetch/images/ubuntu.png"
-663 #image_source="${HOME}/.config/neofetch/images/ubuntu_dark.png"
-664 #image_source="${HOME}/.config/neofetch/images/void.png"
-665 #image_source="${HOME}/.config/neofetch/images/void_dark.png"
-
-...
-" style="box-sizing: border-box; position: relative !important; margin-bottom: 16px;">
-
-...
-
-641 # Image Source
-
-642 #
-
-643 # Which image or ascii file to display.
-
-644 #
-
-645 # Default:  'auto'
-
-646 # Values:   'auto', 'ascii', 'wallpaper', '/path/to/img', '/path/to/ascii', '/path/to/dir/'
-
-647 #           'command output (neofetch --ascii "$(fortune | cowsay -W 30)")'
-
-648 # Flag:     --source
-
-649 #
-
-650 # NOTE: 'auto' will pick the best image source for whatever image backend is used.
-
-651 #       In ascii mode, distro ascii art will be used and in an image mode, your
-
-652 #       wallpaper will be used.
-
-653 #image_source="auto"
-
-654 #image_source="${HOME}/.config/neofetch/images/arch.png"
-
-655 #image_source="${HOME}/.config/neofetch/images/arch_dark.png"
-
-656 #image_source="${HOME}/.config/neofetch/images/artix.png"
-
-657 #image_source="${HOME}/.config/neofetch/images/bedrock.png"
-
-658 #image_source="${HOME}/.config/neofetch/images/gentoo.png"
-
-659 #image_source="${HOME}/.config/neofetch/images/gentoo_dark.png"
-
-660 #image_source="${HOME}/.config/neofetch/images/lofi.png"
-
-661 image_source="${HOME}/.config/neofetch/images/sakura.png"
-
-662 #image_source="${HOME}/.config/neofetch/images/ubuntu.png"
-
-663 #image_source="${HOME}/.config/neofetch/images/ubuntu_dark.png"
-
-664 #image_source="${HOME}/.config/neofetch/images/void.png"
-
-665 #image_source="${HOME}/.config/neofetch/images/void_dark.png"
-
-
-...
-See Images
-📝 Notes
-Color Scheme
-
-owl4ce.color-scheme
-
-Nord Color Palette compatible
-
-
-💬
-Widget? We don't do that here. My main philosophy in building this is as a minimal replacement for Desktop Environment without any desktop decoration e.g icons and widgets, but it can be adapted to taste of user with an overall theme based on one color palette and can be easily switched between Mechanical-Eyecandy. I admit, the downside is that it relies heavily on the GNU/Linux operating system since bashism is not POSIX-compliant to other shell. Most of the size of this repository is large due to wallpapers, icons, and git caches.Please don't underrate, I've configured them all since April 2020 and have been stuDYING them since October 2019. Awesome open-source. If you support it, star it or make a PR. Or if there is a problem with configuration (please check previous issues if any) you can make an issue here. Also if you want a discussion.Thank you!Feel free to modify.. under GPL-3.0Why openbox? Really a perfect next-gen window manager, easily configurable, and less resources usage.Openbox isn't dead, but completed features.
- 
-
-
-
-💝 Tip Jar
-If you enjoy my dotfiles and would like to show your appreciation, you may want to tip me here. It is never required but always wholeheartedly appreciated.
-
-Thank you from the bottom of my heart! 💗
-
-BTC: 3DrjWyd6Xgv4tKoL56mPtoQX4fL4LbR7zf
-ETH: 0x818fC9B82548C1020ed7370DFeb04BCbADc59191
-🎊 Credits / Thanks
-Inspiration and resources
-
-Elena
-Adhi Pambudi
-Fikri Omar
-Nanda Oktavera
-Rizqi Nur Assyaufi
-Muktazam Hasbi Ashidiqi
-Galih Wisnuaji
-Ghani Rafif
-Aditya Shakya
-?
-Knowledge and other resources
-
-Digital Synopsis
-Wiki @ Openbox
-Pango Markup @ Gnome
-Custom Environment @ ArchWiki
-Recommended Applications @ Gentoo Wiki
-Pure Bash Bible
-Stark's Color Scripts
-Notify Send (bash)
-NetworkManager Dmenu
-URxvt Manual
-URxvt Resize Font
-URxvt Tabbed Extended
-Showing Album Cover in Ncmpcpp
-Complete List of GitHub Markdown Emoji Markup
-Many GNU/Linux and Unix forums.
-Contributors
-
-Ekaunt - Better promptmenu
-
-HopeBaron - Termite config
-
-Justin Faber - Rofi matched lines indicator
-
-
-
-Made with contributors-img.
-
-Softwares
-
-Geany - The Flyweight IDE
-GIMP - GNU Image Manipulation Program
-Gpick - Advanced Color Picker
-Gucharmap - GNOME Character Map
-Themix - GUI Theme Designer
-Tint2conf, etc.
-Our local linux community Linuxer Desktop Art and @dotfiles_id, also r/unixporn.
-
-© All artist who make icons, illustrations, and wallpapers.
-
-The original source that I found:
-
-Gladient Icons
-桜
-桜セイバー沖田総司
-沖田総司![1](https://user-images.githubusercontent.com/58392246/122732624-a9cb2900-d2a6-11eb-8f81-60fb781f7b1d.jpg)
-![203545512_858046784833573_3538112098952761558_n](https://user-images.githubusercontent.com/58392246/122732629-aafc5600-d2a6-11eb-9277-22bf825aaed8.jpg)
-![featured_channel](https://user-images.githubusercontent.com/58392246/122732633-ab94ec80-d2a6-11eb-9405-912cb4232c3e.jpg)
-![karakter-pecinta-warna-hitam](https://user-images.githubusercontent.com/58392246/122732635-ac2d8300-d2a6-11eb-9a2a-30c38218388b.jpg)
-![shRgEdj](https://user-images.githubusercontent.com/58392246/122732636-ac2d8300-d2a6-11eb-8fd2-dc5acc7c0d06.png)
+ClassName namedBoards = ClassName.get("com.mattel", "Hoverboard", "Boards");
+
+MethodSpec beyond = MethodSpec.methodBuilder("beyond")
+    .returns(listOfHoverboards)
+    .addStatement("$T result = new $T<>()", listOfHoverboards, arrayList)
+    .addStatement("result.add($T.createNimbus(2000))", hoverboard)
+    .addStatement("result.add($T.createNimbus(\"2001\"))", hoverboard)
+    .addStatement("result.add($T.createNimbus($T.THUNDERBOLT))", hoverboard, namedBoards)
+    .addStatement("$T.sort(result)", Collections.class)
+    .addStatement("return result.isEmpty() ? $T.emptyList() : result", Collections.class)
+    .build();
+
+TypeSpec hello = TypeSpec.classBuilder("HelloWorld")
+    .addMethod(beyond)
+    .build();
+
+JavaFile.builder("com.example.helloworld", hello)
+    .addStaticImport(hoverboard, "createNimbus")
+    .addStaticImport(namedBoards, "*")
+    .addStaticImport(Collections.class, "*")
+    .build();
+JavaPoet will first add your import static block to the file as configured, match and mangle all calls accordingly and also import all other types as needed.
+
+package com.example.helloworld;
+
+import static com.mattel.Hoverboard.Boards.*;
+import static com.mattel.Hoverboard.createNimbus;
+import static java.util.Collections.*;
+
+import com.mattel.Hoverboard;
+import java.util.ArrayList;
+import java.util.List;
+
+class HelloWorld {
+  List<Hoverboard> beyond() {
+    List<Hoverboard> result = new ArrayList<>();
+    result.add(createNimbus(2000));
+    result.add(createNimbus("2001"));
+    result.add(createNimbus(THUNDERBOLT));
+    sort(result);
+    return result.isEmpty() ? emptyList() : result;
+  }
+}
+$N for Names
+Generated code is often self-referential. Use $N to refer to another generated declaration by its name. Here's a method that calls another:
+
+public String byteToHex(int b) {
+  char[] result = new char[2];
+  result[0] = hexDigit((b >>> 4) & 0xf);
+  result[1] = hexDigit(b & 0xf);
+  return new String(result);
+}
+
+public char hexDigit(int i) {
+  return (char) (i < 10 ? i + '0' : i - 10 + 'a');
+}
+When generating the code above, we pass the hexDigit() method as an argument to the byteToHex() method using $N:
+
+MethodSpec hexDigit = MethodSpec.methodBuilder("hexDigit")
+    .addParameter(int.class, "i")
+    .returns(char.class)
+    .addStatement("return (char) (i < 10 ? i + '0' : i - 10 + 'a')")
+    .build();
+
+MethodSpec byteToHex = MethodSpec.methodBuilder("byteToHex")
+    .addParameter(int.class, "b")
+    .returns(String.class)
+    .addStatement("char[] result = new char[2]")
+    .addStatement("result[0] = $N((b >>> 4) & 0xf)", hexDigit)
+    .addStatement("result[1] = $N(b & 0xf)", hexDigit)
+    .addStatement("return new String(result)")
+    .build();
+Code block format strings
+Code blocks may specify the values for their placeholders in a few ways. Only one style may be used for each operation on a code block.
+
+Relative Arguments
+Pass an argument value for each placeholder in the format string to CodeBlock.add(). In each example, we generate code to say "I ate 3 tacos"
+
+CodeBlock.builder().add("I ate $L $L", 3, "tacos")
+Positional Arguments
+Place an integer index (1-based) before the placeholder in the format string to specify which argument to use.
+
+CodeBlock.builder().add("I ate $2L $1L", "tacos", 3)
+Named Arguments
+Use the syntax $argumentName:X where X is the format character and call CodeBlock.addNamed() with a map containing all argument keys in the format string. Argument names use characters in a-z, A-Z, 0-9, and _, and must start with a lowercase character.
+
+Map<String, Object> map = new LinkedHashMap<>();
+map.put("food", "tacos");
+map.put("count", 3);
+CodeBlock.builder().addNamed("I ate $count:L $food:L", map)
+Methods
+All of the above methods have a code body. Use Modifiers.ABSTRACT to get a method without any body. This is only legal if the enclosing class is either abstract or an interface.
+
+MethodSpec flux = MethodSpec.methodBuilder("flux")
+    .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
+    .build();
+
+TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+    .addMethod(flux)
+    .build();
+Which generates this:
+
+public abstract class HelloWorld {
+  protected abstract void flux();
+}
+The other modifiers work where permitted. Note that when specifying modifiers, JavaPoet uses javax.lang.model.element.Modifier, a class that is not available on Android. This limitation applies to code-generating-code only; the output code runs everywhere: JVMs, Android, and GWT.
+
+Methods also have parameters, exceptions, varargs, Javadoc, annotations, type variables, and a return type. All of these are configured with MethodSpec.Builder.
+
+Constructors
+MethodSpec is a slight misnomer; it can also be used for constructors:
+
+MethodSpec flux = MethodSpec.constructorBuilder()
+    .addModifiers(Modifier.PUBLIC)
+    .addParameter(String.class, "greeting")
+    .addStatement("this.$N = $N", "greeting", "greeting")
+    .build();
+
+TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+    .addModifiers(Modifier.PUBLIC)
+    .addField(String.class, "greeting", Modifier.PRIVATE, Modifier.FINAL)
+    .addMethod(flux)
+    .build();
+Which generates this:
+
+public class HelloWorld {
+  private final String greeting;
+
+  public HelloWorld(String greeting) {
+    this.greeting = greeting;
+  }
+}
+For the most part, constructors work just like methods. When emitting code, JavaPoet will place constructors before methods in the output file.
+
+Parameters
+Declare parameters on methods and constructors with either ParameterSpec.builder() or MethodSpec's convenient addParameter() API:
+
+ParameterSpec android = ParameterSpec.builder(String.class, "android")
+    .addModifiers(Modifier.FINAL)
+    .build();
+
+MethodSpec welcomeOverlords = MethodSpec.methodBuilder("welcomeOverlords")
+    .addParameter(android)
+    .addParameter(String.class, "robot", Modifier.FINAL)
+    .build();
+Though the code above to generate android and robot parameters is different, the output is the same:
+
+void welcomeOverlords(final String android, final String robot) {
+}
+The extended Builder form is necessary when the parameter has annotations (such as @Nullable).
+
+Fields
+Like parameters, fields can be created either with builders or by using convenient helper methods:
+
+FieldSpec android = FieldSpec.builder(String.class, "android")
+    .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+    .build();
+
+TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+    .addModifiers(Modifier.PUBLIC)
+    .addField(android)
+    .addField(String.class, "robot", Modifier.PRIVATE, Modifier.FINAL)
+    .build();
+Which generates:
+
+public class HelloWorld {
+  private final String android;
+
+  private final String robot;
+}
+The extended Builder form is necessary when a field has Javadoc, annotations, or a field initializer. Field initializers use the same String.format()-like syntax as the code blocks above:
+
+FieldSpec android = FieldSpec.builder(String.class, "android")
+    .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+    .initializer("$S + $L", "Lollipop v.", 5.0d)
+    .build();
+Which generates:
+
+private final String android = "Lollipop v." + 5.0;
+Interfaces
+JavaPoet has no trouble with interfaces. Note that interface methods must always be PUBLIC ABSTRACT and interface fields must always be PUBLIC STATIC FINAL. These modifiers are necessary when defining the interface:
+
+TypeSpec helloWorld = TypeSpec.interfaceBuilder("HelloWorld")
+    .addModifiers(Modifier.PUBLIC)
+    .addField(FieldSpec.builder(String.class, "ONLY_THING_THAT_IS_CONSTANT")
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+        .initializer("$S", "change")
+        .build())
+    .addMethod(MethodSpec.methodBuilder("beep")
+        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+        .build())
+    .build();
+But these modifiers are omitted when the code is generated. These are the defaults so we don't need to include them for javac's benefit!
+
+public interface HelloWorld {
+  String ONLY_THING_THAT_IS_CONSTANT = "change";
+
+  void beep();
+}
+Enums
+Use enumBuilder to create the enum type, and addEnumConstant() for each value:
+
+TypeSpec helloWorld = TypeSpec.enumBuilder("Roshambo")
+    .addModifiers(Modifier.PUBLIC)
+    .addEnumConstant("ROCK")
+    .addEnumConstant("SCISSORS")
+    .addEnumConstant("PAPER")
+    .build();
+To generate this:
+
+public enum Roshambo {
+  ROCK,
+
+  SCISSORS,
+
+  PAPER
+}
+Fancy enums are supported, where the enum values override methods or call a superclass constructor. Here's a comprehensive example:
+
+TypeSpec helloWorld = TypeSpec.enumBuilder("Roshambo")
+    .addModifiers(Modifier.PUBLIC)
+    .addEnumConstant("ROCK", TypeSpec.anonymousClassBuilder("$S", "fist")
+        .addMethod(MethodSpec.methodBuilder("toString")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement("return $S", "avalanche!")
+            .returns(String.class)
+            .build())
+        .build())
+    .addEnumConstant("SCISSORS", TypeSpec.anonymousClassBuilder("$S", "peace")
+        .build())
+    .addEnumConstant("PAPER", TypeSpec.anonymousClassBuilder("$S", "flat")
+        .build())
+    .addField(String.class, "handsign", Modifier.PRIVATE, Modifier.FINAL)
+    .addMethod(MethodSpec.constructorBuilder()
+        .addParameter(String.class, "handsign")
+        .addStatement("this.$N = $N", "handsign", "handsign")
+        .build())
+    .build();
+Which generates this:
+
+public enum Roshambo {
+  ROCK("fist") {
+    @Override
+    public String toString() {
+      return "avalanche!";
+    }
+  },
+
+  SCISSORS("peace"),
+
+  PAPER("flat");
+
+  private final String handsign;
+
+  Roshambo(String handsign) {
+    this.handsign = handsign;
+  }
+}
+Anonymous Inner Classes
+In the enum code, we used TypeSpec.anonymousInnerClass(). Anonymous inner classes can also be used in code blocks. They are values that can be referenced with $L:
+
+TypeSpec comparator = TypeSpec.anonymousClassBuilder("")
+    .addSuperinterface(ParameterizedTypeName.get(Comparator.class, String.class))
+    .addMethod(MethodSpec.methodBuilder("compare")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC)
+        .addParameter(String.class, "a")
+        .addParameter(String.class, "b")
+        .returns(int.class)
+        .addStatement("return $N.length() - $N.length()", "a", "b")
+        .build())
+    .build();
+
+TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
+    .addMethod(MethodSpec.methodBuilder("sortByLength")
+        .addParameter(ParameterizedTypeName.get(List.class, String.class), "strings")
+        .addStatement("$T.sort($N, $L)", Collections.class, "strings", comparator)
+        .build())
+    .build();
+This generates a method that contains a class that contains a method:
+
+void sortByLength(List<String> strings) {
+  Collections.sort(strings, new Comparator<String>() {
+    @Override
+    public int compare(String a, String b) {
+      return a.length() - b.length();
+    }
+  });
+}
+One particularly tricky part of defining anonymous inner classes is the arguments to the superclass constructor. In the above code we're passing the empty string for no arguments: TypeSpec.anonymousClassBuilder(""). To pass different parameters use JavaPoet's code block syntax with commas to separate arguments.
+
+Annotations
+Simple annotations are easy:
+
+MethodSpec toString = MethodSpec.methodBuilder("toString")
+    .addAnnotation(Override.class)
+    .returns(String.class)
+    .addModifiers(Modifier.PUBLIC)
+    .addStatement("return $S", "Hoverboard")
+    .build();
+Which generates this method with an @Override annotation:
+
+  @Override
+  public String toString() {
+    return "Hoverboard";
+  }
+Use AnnotationSpec.builder() to set properties on annotations:
+
+MethodSpec logRecord = MethodSpec.methodBuilder("recordEvent")
+    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+    .addAnnotation(AnnotationSpec.builder(Headers.class)
+        .addMember("accept", "$S", "application/json; charset=utf-8")
+        .addMember("userAgent", "$S", "Square Cash")
+        .build())
+    .addParameter(LogRecord.class, "logRecord")
+    .returns(LogReceipt.class)
+    .build();
+Which generates this annotation with accept and userAgent properties:
+
+@Headers(
+    accept = "application/json; charset=utf-8",
+    userAgent = "Square Cash"
+)
+LogReceipt recordEvent(LogRecord logRecord);
+When you get fancy, annotation values can be annotations themselves. Use $L for embedded annotations:
+
+MethodSpec logRecord = MethodSpec.methodBuilder("recordEvent")
+    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+    .addAnnotation(AnnotationSpec.builder(HeaderList.class)
+        .addMember("value", "$L", AnnotationSpec.builder(Header.class)
+            .addMember("name", "$S", "Accept")
+            .addMember("value", "$S", "application/json; charset=utf-8")
+            .build())
+        .addMember("value", "$L", AnnotationSpec.builder(Header.class)
+            .addMember("name", "$S", "User-Agent")
+            .addMember("value", "$S", "Square Cash")
+            .build())
+        .build())
+    .addParameter(LogRecord.class, "logRecord")
+    .returns(LogReceipt.class)
+    .build();
+Which generates this:
+
+@HeaderList({
+    @Header(name = "Accept", value = "application/json; charset=utf-8"),
+    @Header(name = "User-Agent", value = "Square Cash")
+})
+LogReceipt recordEvent(LogRecord logRecord);
+Note that you can call addMember() multiple times with the same property name to populate a list of values for that property.
+
+Javadoc
+Fields, methods and types can be documented with Javadoc:
+
+MethodSpec dismiss = MethodSpec.methodBuilder("dismiss")
+    .addJavadoc("Hides {@code message} from the caller's history. Other\n"
+        + "participants in the conversation will continue to see the\n"
+        + "message in their own history unless they also delete it.\n")
+    .addJavadoc("\n")
+    .addJavadoc("<p>Use {@link #delete($T)} to delete the entire\n"
+        + "conversation for all participants.\n", Conversation.class)
+    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+    .addParameter(Message.class, "message")
+    .build();
+Which generates this:
+
+  /**
+   * Hides {@code message} from the caller's history. Other
+   * participants in the conversation will continue to see the
+   * message in their own history unless they also delete it.
+   *
+   * <p>Use {@link #delete(Conversation)} to delete the entire
+   * conversation for all participants.
+   */
+  void dismiss(Message message);
+Use $T when referencing types in Javadoc to get automatic imports.
+
+Download
+Download the latest .jar or depend via Maven:
+
+<dependency>
+  <groupId>com.squareup</groupId>
+  <artifactId>javapoet</artifactId>
+  <version>1.13.0</version>
+</dependency>
+or Gradle:
+
+compile 'com.squareup:javapoet:1.13.0'
+Snapshots of the development version are available in Sonatype's snapshots repository.
+
+License
+Copyright 2015 Square, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+JavaWriter
+JavaPoet is the successor to JavaWriter. New projects should prefer JavaPoet because it has a stronger code model: it understands types and can manage imports automatically. JavaPoet is also better suited to composition: rather than streaming the contents of a .java file top-to-bottom in a single pass, a file can be assembled as a tree of declarations.
+
+JavaWriter continues to be available in GitHub and Maven Central.
